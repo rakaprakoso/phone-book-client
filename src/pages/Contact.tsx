@@ -45,6 +45,7 @@ const Contact = () => {
         <ul>
           <li>Fetch Data locally due to limitness deployment graphql server.</li>
           <li>Add & Edit Contact still not available.</li>
+          <li>Pagination still not available.</li>
         </ul>
       </SweetAlert2>
     </>
