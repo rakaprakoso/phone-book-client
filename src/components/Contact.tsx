@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useQuery, gql } from "@apollo/client";
 import { Link, useNavigate } from "react-router-dom";
-import { FaRegHeart, FaTrash,FaHeart, FaExclamation, FaExclamationCircle } from "react-icons/fa";
+import {
+  FaRegHeart,
+  FaTrash,
+  FaHeart,
+  FaExclamation,
+  FaExclamationCircle,
+} from "react-icons/fa";
 import { Console } from "console";
+import contactData from "../data/contact";
 
 interface Contact {
   id: number;
@@ -76,9 +83,7 @@ const handleRemoveFavorite = (id: any) => {
 };
 
 const handleRemoveData = (id: any) => {
-  var current_contacts = JSON.parse(
-    localStorage.getItem("contacts") || "{}"
-  );
+  var current_contacts = JSON.parse(localStorage.getItem("contacts") || "{}");
   let contacts: any | undefined;
   contacts = current_contacts?.contacts.filter((contact: { id: string }) => {
     return contact.id != id;
@@ -96,11 +101,21 @@ export function PhoneContactList(props: any) {
   >(undefined);
 
   var is_skip = localStorage.getItem("contacts") ? true : false;
-  const { loading, data } = useQuery<ContactData, ContactVars>(GET_CONTACT, {
-    variables: { first_name: props.search_query },
-    skip: is_skip,
-  });
+  // const { loading, data } = useQuery<ContactData, ContactVars>(GET_CONTACT, {
+  //   variables: { first_name: props.search_query },
+  //   skip: is_skip,
+  // });
+
+  const data = contactData;
+  const [loading, setLoading] = useState(true);
   const updateList = () => {
+    const  contactExist = JSON.parse(localStorage.getItem("contacts") || "{}");
+    const isDataSet = Object.keys(contactExist).length === 0 ? false : true;
+    if ((data && !isDataSet) || props.syncServer) {
+      localStorage.setItem("contacts", JSON.stringify(data));
+      props.setSyncServer(false)
+    }
+    
     var items = JSON.parse(localStorage.getItem("contacts") || "{}");
     props.setTotalContact(items?.contacts?.length ?? 0);
 
@@ -160,22 +175,24 @@ export function PhoneContactList(props: any) {
     }
 
     setItems(items);
-    props.setTotalContact(items?.contacts?.length ?? 0);
   };
-  if (data) {
-    localStorage.setItem("contacts", JSON.stringify(data));
-    updateList();
-  }
-
-
 
   useEffect(() => {
     updateList();
-  }, [props.search_query,data]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    updateList();
+  }, [props.search_query, data, props.syncServer]);
 
   const navigate = useNavigate();
 
-  function ContactListBox(props: { currentItems: ContactData; navigate: any; type: string}) {
+  function ContactListBox(props: {
+    currentItems: ContactData;
+    navigate: any;
+    type: string;
+  }) {
     return (
       <>
         {props.currentItems &&
@@ -230,7 +247,7 @@ export function PhoneContactList(props: any) {
                       paddingLeft: "20px",
                       position: "relative",
                       width: "100%",
-                      paddingRight: '70px',
+                      paddingRight: "70px",
                     }}
                   >
                     <div style={{ fontWeight: "700" }}>
@@ -239,32 +256,43 @@ export function PhoneContactList(props: any) {
                     <div>{contact.phones[0]["number"]}</div>
                   </div>
                 </div>
-                <span style={{ fontSize: '20px',position: "absolute", right: "10px" }}>
+                <span
+                  style={{
+                    fontSize: "20px",
+                    position: "absolute",
+                    right: "10px",
+                  }}
+                >
                   <span
-                    style={{ padding: "3px",color:"#e12222",marginRight: "10px" }}
+                    style={{
+                      padding: "3px",
+                      color: "#e12222",
+                      marginRight: "10px",
+                    }}
                     onClick={(e) => {
                       e.preventDefault();
-                      if (props.type == 'favorite') {
+                      if (props.type == "favorite") {
                         handleRemoveFavorite(contact.id);
-                      }else{
+                      } else {
                         handleAddFavorite(contact.id);
                       }
                       updateList();
                     }}
                   >
-                    {props.type == 'favorite' ? <FaHeart/> : <FaRegHeart />}
+                    {props.type == "favorite" ? <FaHeart /> : <FaRegHeart />}
                   </span>
-                  {props.type != 'favorite' && <span
-                    style={{ padding: "3px",color:"#a7a7a7" }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleRemoveData(contact.id);
-                      updateList();
-                    }}
-                  >
-                    <FaTrash />
-                  </span>}
-                  
+                  {props.type != "favorite" && (
+                    <span
+                      style={{ padding: "3px", color: "#a7a7a7" }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleRemoveData(contact.id);
+                        updateList();
+                      }}
+                    >
+                      <FaTrash />
+                    </span>
+                  )}
                 </span>
               </div>
             </div>
@@ -287,28 +315,43 @@ export function PhoneContactList(props: any) {
           }}
         >
           <>
-            <div style={{marginBottom:'20px'}}>
-              <h3 style={{marginBottom:'10px'}}>Favorite</h3>
+            <div style={{ marginBottom: "20px" }}>
+              <h3 style={{ marginBottom: "10px" }}>Favorite</h3>
               {favorite_contact?.contacts && (
-                <ContactListBox currentItems={favorite_contact} navigate={navigate} type='favorite' />
+                <ContactListBox
+                  currentItems={favorite_contact}
+                  navigate={navigate}
+                  type="favorite"
+                />
               )}
               {(favorite_contact == undefined ||
-                Object.keys(favorite_contact).length === 0 || favorite_contact.contacts.length === 0) && (
-                <div style={{ textAlign:'center' }}>
-                  <h4 style={{ fontSize:'3rem',color:'#8f8f8f' }}><FaExclamationCircle/></h4>
+                Object.keys(favorite_contact).length === 0 ||
+                favorite_contact.contacts.length === 0) && (
+                <div style={{ textAlign: "center" }}>
+                  <h4 style={{ fontSize: "3rem", color: "#8f8f8f" }}>
+                    <FaExclamationCircle />
+                  </h4>
                   <p>No Data Found</p>
-                  </div>
+                </div>
               )}
             </div>
             <div>
-              <h3 style={{marginBottom:'10px'}}>Contact</h3>
+              <h3 style={{ marginBottom: "10px" }}>Contact</h3>
               {items?.contacts && items?.contacts?.length > 0 && (
-                <ContactListBox currentItems={items} navigate={navigate} type='' />
+                <ContactListBox
+                  currentItems={items}
+                  navigate={navigate}
+                  type=""
+                />
               )}
-              {items?.contacts?.length == 0 && <div style={{ textAlign:'center' }}>
-                  <h4 style={{ fontSize:'3rem',color:'#8f8f8f' }}><FaExclamationCircle/></h4>
+              {items?.contacts?.length == 0 && (
+                <div style={{ textAlign: "center" }}>
+                  <h4 style={{ fontSize: "3rem", color: "#8f8f8f" }}>
+                    <FaExclamationCircle />
+                  </h4>
                   <p>No Data Found</p>
-                  </div>}
+                </div>
+              )}
             </div>
           </>
         </div>
